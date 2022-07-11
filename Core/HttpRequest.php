@@ -3,6 +3,7 @@
 namespace Framework\Core;
 
 use Framework\Core\interfaces\HttpRequestInterface;
+use CurlHandle;
 
 /**
  * File: HttpRequest.php
@@ -13,4 +14,10 @@ use Framework\Core\interfaces\HttpRequestInterface;
 
 class HttpRequest implements HttpRequestInterface
 {
+
+    /**
+     * @var CurlHandle instance of the Curl request
+     */
+    private readonly CurlHandle $ch;
+
 }
