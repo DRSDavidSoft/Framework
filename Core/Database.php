@@ -22,9 +22,9 @@ class Database implements DatabaseInterface
     /**
      * Open the database connection
      *
-     * @param string $dsn		Connection data source name
-     * @param string $username	Database username
-     * @param string $password	Authentication password
+     * @param string $dsn       Connection data source name
+     * @param string $username  Database username
+     * @param string $password  Authentication password
      */
 
     public function __construct(string $dsn, string $username = '', string $password = '')
