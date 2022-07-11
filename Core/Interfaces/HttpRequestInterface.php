@@ -1,8 +1,7 @@
-<?php 
+<?php
 
 namespace Framework\Core\Interfaces;
 
-interface HttpRequestInterface
+interface CurlInterface
 {
-
 }
