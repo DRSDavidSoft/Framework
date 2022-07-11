@@ -105,7 +105,7 @@ class Database implements DatabaseInterface
      * @param string tbl_name   Name of the table
      * @param array  filters    List of key value columns to match
      * @param array  data       List of key value columns to update
-     *      *
+     *
      * @return int the number of affected rows
      */
 
@@ -131,7 +131,7 @@ class Database implements DatabaseInterface
      *
      * @param string tbl_name   Name of the table
      * @param array  data       List of key value columns
-     *      *
+     *
      * @return int the last insert id if successful, null otherwise
      */
 
@@ -150,9 +150,27 @@ class Database implements DatabaseInterface
         return $success ? $id : null;
     }
 
+    /**
+     * Return the number of matching rows
+     *
+     * @param string tbl_name   Name of the table
+     * @param array  filters    List of key value columns
+     *
+     * @return int number of rows if successful, null otherwise
+     */
+
     public function count(string $tbl_name, array $filters) : int
     {
-        return 0;
+        $table   = self::sanitizeName  ( $tbl_name );
+        // $filters = self::sanitizeArray ( $filters );
+
+        $fields  = '*';
+        $where   = self::buildWhere( $filters );
+        $sql     = ("SELECT COUNT($fields) FROM `$table` WHERE ($where)");
+        $stmt    = $this->connection->prepare( self::formatSQL($sql, $this->connection) );
+        $success = $stmt->execute( array_values($filters) );
+        $column  = $stmt->fetchColumn();
+        return $success ? $column : null;
     }
 
     public function exists(string $tbl_name, array $filters) : bool
