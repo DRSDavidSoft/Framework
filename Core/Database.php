@@ -46,7 +46,7 @@ class Database implements DatabaseInterface
             ]);
 
             // operate in UTF-8 character set
-            $this->db->setAttribute(PDO::MYSQL_ATTR_INIT_COMMAND, "SET NAMES utf8");
+            $this->connection->setAttribute(PDO::MYSQL_ATTR_INIT_COMMAND, "SET NAMES utf8");
 
         }
 
@@ -59,23 +59,35 @@ class Database implements DatabaseInterface
     }
 
     /**
-     * Disconnects and closes the connection with database
+     * Get a single row from the database
+     *
+     * @param string tbl_name   Name of the table
+     * @param array  filters    List of key value columns
+     *
+     * @return array Associative array containing the row data
      */
-    public function __destruct() {
-        $this->connection = null;
-    }
 
     public function getRow(string $tbl_name, array $filters) : array
     {
         $rows = $this->readAll( $tbl_name, $filters, 1 );
-        return array_pop($rows);
+        return reset($rows);
     }
+
+    /**
+     * Read all rows from the database that match the filters
+     *
+     * @param string tbl_name   Name of the table
+     * @param array  filters    List of key value columns
+     * @param int    limit      Maximum number of rows to return, INF for uno limit
+     *
+     * @return array An array containing an associative array per returned row
+     */
 
     public function readAll(string $tbl_name, array $filters, int $limit = INF) : array
     {
-        $limit   = self::sanitizeInt   ( $limit );
         $table   = self::sanitizeName  ( $tbl_name );
-        // $filters = sanitizeArray ( $filters );
+        $limit   = self::sanitizeInt   ( $limit );
+        // $filters = self::sanitizeArray ( $filters );
 
         $fields  = '*'; // TODO: select certain columns only
         $where   = self::buildWhere( $filters );
@@ -87,12 +99,23 @@ class Database implements DatabaseInterface
         return $result;
     }
 
+    /**
+     * Update existing columns with new data
+     *
+     * @param string tbl_name   Name of the table
+     * @param array  filters    List of key value columns to match
+     * @param array  data       List of key value columns to update
+     *      *
+     * @return int the number of affected rows
+     */
+
     public function write(string $tbl_name, array $filters, array $data) : int
     {
         $table   = self::sanitizeName  ( $tbl_name );
         $filters = self::sanitizeArray ( $filters );
         $data    = self::sanitizeArray ( $data );
 
+        $post    = [];
         $clause  = implode(', ', self::preparePost( $post, $data, 'set' )[1] );
         $where   = implode(' AND ', self::preparePost( $post, $filters, 'where' )[1] );
         $sql     = ("UPDATE `$table` SET $clause WHERE ($where)");
@@ -102,6 +125,15 @@ class Database implements DatabaseInterface
 
         return $success ? $count : null;
     }
+
+    /**
+     * Insert a new row in the database
+     *
+     * @param string tbl_name   Name of the table
+     * @param array  data       List of key value columns
+     *      *
+     * @return int the last insert id if successful, null otherwise
+     */
 
     public function addRow(string $tbl_name, array $data) : int
     {
@@ -186,8 +218,8 @@ class Database implements DatabaseInterface
     */
 
     public static function sanitizeInt( string|int $input ) : int {
-        // Return negative and positive Infinity as-is
-        if ( is_null($input) || abs($input) === INF ) return $input;
+        // Return null, negative and positive Infinity as-is
+        if ( is_null($input) || is_int($input) ) return $input;
 
         // Remove any kind of whitespace, and/or comma digit separators
         $input = preg_replace( '/[\s|\,]+/', '', (string) $input );
@@ -213,11 +245,6 @@ class Database implements DatabaseInterface
 
         // Remove all non-alphanumeric and underscore characters
         $output = preg_replace( '/[^\w\-]+/', '', $output );
-
-        if ( !ctype_digit($output) ) {
-            // Remove numbers from the beginning of the variable
-            $output = preg_replace( '/^\d+/', '', $output );
-        }
 
         // Truncate to 128 characters
         $output = substr( $output, 0, 128 ); // TODO: replace with self::MAX_LEN or something
