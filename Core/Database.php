@@ -173,9 +173,19 @@ class Database implements DatabaseInterface
         return $success ? $column : null;
     }
 
+    /**
+     * Check if matching rows exist
+     *
+     * @param string tbl_name   Name of the table
+     * @param array  filters    List of key value columns
+     *
+     * @return int true/false if successful, null otherwise
+     */
+
     public function exists(string $tbl_name, array $filters) : bool
     {
-        return false;
+        $count = $this->count($tbl_name, $filters);
+        return is_null($count) ? $count : ($count > 0);
     }
 
     public function query(string $tbl_name, string $query, array $arguments) : array
