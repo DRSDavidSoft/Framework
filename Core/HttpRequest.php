@@ -39,6 +39,11 @@ class HttpRequest implements HttpRequestInterface
         curl_close($this->ch);
     }
 
+    public function getURL() : string
+    {
+        return curl_getinfo($this->ch, CURLINFO_EFFECTIVE_URL);
+    }
+
     public function setURL(string $url) : bool
     {
         if (!filter_var($url, FILTER_VALIDATE_URL))
