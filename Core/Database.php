@@ -36,8 +36,8 @@ class Database implements DatabaseInterface
 
         try {
 
-			// Remove all whitespace, tabs and newlines
-			$dsn = preg_replace( '|\s+|', '', $dsn );
+            // Remove all whitespace, tabs and newlines
+            $dsn = preg_replace( '|\s+|', '', $dsn );
 
             $this->connection = new PDO($dsn, $username, $password, [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,		// turn on errors in the form of exceptions
