@@ -16,7 +16,7 @@ interface DatabaseInterface
 
     public function exists(string $tbl_name, array $filters) : bool;
 
-    public function query(string $tbl_name, string $query, array $arguments) : array;
+    public function query(string $query, array $arguments = []) : array;
 
-    public function execute(string $tbl_name, string $query, array $arguments) : bool;
+    public function execute(string $query, array $arguments = []) : bool;
 }

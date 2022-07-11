@@ -188,14 +188,37 @@ class Database implements DatabaseInterface
         return is_null($count) ? $count : ($count > 0);
     }
 
-    public function query(string $tbl_name, string $query, array $arguments) : array
+    /**
+     * Perform SQL query and return rows from database
+     *
+     * @param string query        Full SQL query to perform
+     * @param array  arguments    List of arguments to pass to the database
+     *
+     * @return array matched rows if successful, null otherwise
+     */
+
+    public function query(string $query, array $arguments = []) : array
     {
-        return [];
+        $stmt    = $this->connection->prepare( formatSQL($query) );
+        $success = $stmt->execute( $arguments );
+        $result  = $stmt->fetchAll( PDO::FETCH_ASSOC );
+        return $success ? $result : null;
     }
 
-    public function execute(string $tbl_name, string $query, array $arguments) : bool
+    /**
+     * Execute SQL command in database
+     *
+     * @param string query        Full SQL command to execute
+     * @param array  arguments    List of arguments to pass to the database
+     *
+     * @return boolean true if successful, false otherwise
+     */
+
+    public function execute(string $query, array $arguments = []) : bool
     {
-        return false;
+        $stmt    = $this->connection->prepare( formatSQL($query) );
+        $success = $stmt->execute( $arguments );
+        return $success;
     }
 
     public static function array_build( $glue, $array ) {
