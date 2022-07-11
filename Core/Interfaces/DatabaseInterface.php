@@ -7,8 +7,8 @@ interface DatabaseInterface
     public function getRow(string $tbl_name, array $filters) : array;
 
     public function readAll(string $tbl_name, array $filters) : array;
-    
-    public function write(string $tbl_name, array ...$rows) : int;
+
+    public function write(string $tbl_name, array $filters, array $data) : int;
 
     public function addRow(string $tbl_name, array $data) : int;
 
