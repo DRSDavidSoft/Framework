@@ -2,6 +2,6 @@
 
 namespace Framework\Core\Interfaces;
 
-interface CurlInterface
+interface HttpRequestInterface
 {
 }
