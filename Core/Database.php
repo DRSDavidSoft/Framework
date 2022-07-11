@@ -313,8 +313,7 @@ class Database implements DatabaseInterface
         return trim($input);
     }
 
-    public static function sanitizeArray( array $input ) : array
-    {
+    public static function sanitizeArray( array $input ) : array {
         $output = [];
         foreach ( $input as $name => $value ) {
             $output [ is_int($name) || ctype_digit($name) ? self::sanitizeInt($name) : self::sanitizeName($name) ] = is_null($value) ? null : (string) $value;
@@ -396,8 +395,7 @@ class Database implements DatabaseInterface
         return implode(' AND ', $where);
     }
 
-    public static function formatSQL( string $sql, PDO $db ) : string
-    {
+    public static function formatSQL( string $sql, PDO $db ) : string {
 
         // Normalize line endings
         $sql = preg_replace( '|[\r\n]+|', "\n", $sql );
