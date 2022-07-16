@@ -27,7 +27,7 @@ class Database implements DatabaseInterface
      * @param string $password  Authentication password
      */
 
-    public function __construct(string $dsn, string $username = '', string $password = '')
+    public function __construct(string $dsn="mysql:host=localhost;dbname=mizbanc_skjdfhskjdbcirebkcsu", string $username = "root", string $password = "")
     {
         // Check if all the required extensions are present
         foreach ( ['PDO', 'pdo_mysql'] as $extension ) if( !extension_loaded($extension) ) {
@@ -70,7 +70,7 @@ class Database implements DatabaseInterface
     public function getRow(string $tbl_name, array $filters) : array
     {
         $rows = $this->readAll( $tbl_name, $filters, 1 );
-        return reset($rows);
+        return empty($rows) ? $rows : reset($rows);
     }
 
     /**
