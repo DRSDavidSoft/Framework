@@ -27,7 +27,7 @@ class Database implements DatabaseInterface
      * @param string $password  Authentication password
      */
 
-    public function __construct(string $dsn="mysql:host=localhost;dbname=mizbanc_skjdfhskjdbcirebkcsu", string $username = "root", string $password = "")
+    public function __construct(string $dsn, string $username = '', string $password = '')
     {
         // Check if all the required extensions are present
         foreach ( ['PDO', 'pdo_mysql'] as $extension ) if( !extension_loaded($extension) ) {
