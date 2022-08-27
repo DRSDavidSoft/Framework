@@ -83,17 +83,18 @@ class Database implements DatabaseInterface
      * @return array An array containing an associative array per returned row
      */
 
-    public function readAll(string $tbl_name, array $filters, int $limit = INF) : array
+    public function readAll(string $tbl_name, array $filters, int $limit = 0) : array
     {
         $table   = self::sanitizeName  ( $tbl_name );
         $limit   = self::sanitizeInt   ( $limit );
         // $filters = self::sanitizeArray ( $filters );
-
         $fields  = '*'; // TODO: select certain columns only
         $where   = self::buildWhere( $filters );
-        $sql     = "SELECT $fields FROM `$table` WHERE ($where) LIMIT $limit";
+        $sql     = "SELECT $fields FROM `$table` WHERE ($where)".($limit>0 ? " LIMIT $limit" : '');
         $stmt    = $this->connection->prepare( self::formatSQL($sql, $this->connection) );
-        $success = $stmt->execute( array_values($filters) );
+//        make WHERE clause compatible with "IN" expression
+//        $success = $stmt->execute( array_values($filters) );
+        $success = $stmt->execute();
         $result  = $stmt->fetchAll( PDO::FETCH_ASSOC );
         // $count   = $stmt->rowCount();
         return $result;
@@ -122,8 +123,9 @@ class Database implements DatabaseInterface
         $stmt    = $this->connection->prepare( self::formatSQL($sql, $this->connection) );
         $success = $stmt->execute( $post );
         $count   = $stmt->rowCount();
-
-        return $success ? $count : null;
+//        To make return value compatible with function return type
+//        return $success ? $count : null;
+        return $success ? $count : 0;
     }
 
     /**
@@ -147,7 +149,9 @@ class Database implements DatabaseInterface
         $stmt    = $this->connection->prepare( self::formatSQL($sql, $this->connection) );
         $success = $stmt->execute( $post );
         $id      = $this->connection->lastInsertId();
-        return $success ? $id : null;
+//        To make return value compatible with function return type
+//        return $success ? $id : null;
+        return $success ? $id : -1;
     }
 
     /**
@@ -168,9 +172,13 @@ class Database implements DatabaseInterface
         $where   = self::buildWhere( $filters );
         $sql     = ("SELECT COUNT($fields) FROM `$table` WHERE ($where)");
         $stmt    = $this->connection->prepare( self::formatSQL($sql, $this->connection) );
-        $success = $stmt->execute( array_values($filters) );
+//        make WHERE clause compatible with "IN" expression
+//        $success = $stmt->execute( array_values($filters) );
+        $success = $stmt->execute();
         $column  = $stmt->fetchColumn();
-        return $success ? $column : null;
+//        To make return value compatible with function return type
+//        return $success ? $column : null;
+        return $success ? $column : 0;
     }
 
     /**
@@ -202,7 +210,9 @@ class Database implements DatabaseInterface
         $stmt    = $this->connection->prepare( formatSQL($query) );
         $success = $stmt->execute( $arguments );
         $result  = $stmt->fetchAll( PDO::FETCH_ASSOC );
-        return $success ? $result : null;
+//        To make return value compatible with function return type
+//        return $success ? $result : null;
+        return $success ? $result : [];
     }
 
     /**
@@ -387,9 +397,17 @@ class Database implements DatabaseInterface
         $where = [];
 
         foreach( $filters as $key => $value ) {
-            $opr = self::sanitizeOpr( preg_match( '/^.+\[([^\[\]]+)]$/iU', trim($key), $matches ) ? array_pop($matches) : '=' );
             $key = self::sanitizeName( preg_replace( '/\[([^\[\]]+)]/iU', '', $key) );
-            $where []= str_replace( '*', $key, "`*` $opr ?" );
+
+            if (gettype($value) == 'array') {
+                $opr = 'IN ('.implode(',', $value).')';
+                $where []= str_replace( '*', $key, "`*` $opr" );
+            } else {
+                $opr = self::sanitizeOpr( preg_match( '/^.+\[([^\[\]]+)]$/iU', trim($key), $matches ) ? array_pop($matches) : '=' );
+//                make WHERE clause compatible with "IN" expression
+//                $where []= str_replace( '*', $key, "`*` $opr ?" );
+                $where []= str_replace( '*', $key, "`*` $opr ".$value );
+            }
         }
 
         return implode(' AND ', $where);
