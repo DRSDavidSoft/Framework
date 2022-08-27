@@ -57,4 +57,13 @@ class HttpRequest implements HttpRequestInterface
         return curl_setopt_array($this->ch, $opts);
     }
 
+    public function get(string $url, array $params, int $timeout): array
+    {
+        // TODO: Implement get() method.
+    }
+
+    public function post(string $url, array $params, int $timeout): array
+    {
+        // TODO: Implement post() method.
+    }
 }
