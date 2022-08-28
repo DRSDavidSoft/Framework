@@ -33,4 +33,4 @@ GLOBAL $app;
 
 $app = new Application();
 
-var_dump($app->db->readAll('users', ['id' => 3]));
+var_dump($app->db->readAll('users', ['id' => [2, 3]]));

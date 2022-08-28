@@ -85,16 +85,16 @@ class Database implements DatabaseInterface
 
     public function readAll(string $tbl_name, array $filters, int $limit = 0) : array
     {
-        $table   = self::sanitizeName  ( $tbl_name );
-        $limit   = self::sanitizeInt   ( $limit );
-        // $filters = self::sanitizeArray ( $filters );
+        $table            = self::sanitizeName    ( $tbl_name );
+        $limit            = self::sanitizeInt     ( $limit );
+        $filters          = self::sanitizeArray   ( $filters );
+        $sanitizedFilters = self::sanitizeFilters ( $filters );
+
         $fields  = '*'; // TODO: select certain columns only
         $where   = self::buildWhere( $filters );
         $sql     = "SELECT $fields FROM `$table` WHERE ($where)".($limit>0 ? " LIMIT $limit" : '');
         $stmt    = $this->connection->prepare( self::formatSQL($sql, $this->connection) );
-//        make WHERE clause compatible with "IN" expression
-//        $success = $stmt->execute( array_values($filters) );
-        $success = $stmt->execute();
+        $success = $stmt->execute( $sanitizedFilters );
         $result  = $stmt->fetchAll( PDO::FETCH_ASSOC );
         // $count   = $stmt->rowCount();
         return $result;
@@ -165,16 +165,15 @@ class Database implements DatabaseInterface
 
     public function count(string $tbl_name, array $filters) : int
     {
-        $table   = self::sanitizeName  ( $tbl_name );
-        // $filters = self::sanitizeArray ( $filters );
+        $table            = self::sanitizeName    ( $tbl_name );
+        $filters          = self::sanitizeArray   ( $filters );
+        $sanitizedFilters = self::sanitizeFilters ( $filters );
 
         $fields  = '*';
         $where   = self::buildWhere( $filters );
         $sql     = ("SELECT COUNT($fields) FROM `$table` WHERE ($where)");
         $stmt    = $this->connection->prepare( self::formatSQL($sql, $this->connection) );
-//        make WHERE clause compatible with "IN" expression
-//        $success = $stmt->execute( array_values($filters) );
-        $success = $stmt->execute();
+        $success = $stmt->execute( $sanitizedFilters );
         $column  = $stmt->fetchColumn();
 //        To make return value compatible with function return type
 //        return $success ? $column : null;
@@ -326,7 +325,22 @@ class Database implements DatabaseInterface
     public static function sanitizeArray( array $input ) : array {
         $output = [];
         foreach ( $input as $name => $value ) {
-            $output [ is_int($name) || ctype_digit($name) ? self::sanitizeInt($name) : self::sanitizeName($name) ] = is_null($value) ? null : (string) $value;
+            $output [ is_int($name) || ctype_digit($name) ? self::sanitizeInt($name) : self::sanitizeName($name) ] = is_null($value) ? null : (is_array($value) ? $value : (string) $value);
+        }
+        // TODO: if ( !( is_string($value) || is_int($value) || is_null($value) ) ) throw new Exception("Invalid type");
+        return $output;
+    }
+
+    public static function sanitizeFilters( array $input ) : array {
+        $output = [];
+        foreach ( $input as $name => $value ) {
+            if (is_array($value)) {
+                foreach ($value as $item) {
+                    $output[] = is_null($item) ? null : (string) $item;
+                }
+            } else {
+                $output[] = is_null($value) ? null : (string) $value;
+            }
         }
         // TODO: if ( !( is_string($value) || is_int($value) || is_null($value) ) ) throw new Exception("Invalid type");
         return $output;
@@ -398,16 +412,9 @@ class Database implements DatabaseInterface
 
         foreach( $filters as $key => $value ) {
             $key = self::sanitizeName( preg_replace( '/\[([^\[\]]+)]/iU', '', $key) );
-
-            if (gettype($value) == 'array') {
-                $opr = 'IN ('.implode(',', $value).')';
-                $where []= str_replace( '*', $key, "`*` $opr" );
-            } else {
-                $opr = self::sanitizeOpr( preg_match( '/^.+\[([^\[\]]+)]$/iU', trim($key), $matches ) ? array_pop($matches) : '=' );
-//                make WHERE clause compatible with "IN" expression
-//                $where []= str_replace( '*', $key, "`*` $opr ?" );
-                $where []= str_replace( '*', $key, "`*` $opr ".$value );
-            }
+            $opr = self::sanitizeOpr( preg_match( '/^.+\[([^\[\]]+)]$/iU', trim($key), $matches ) ? array_pop($matches) : (is_array($value) ? 'IN' : '=') );
+            $sanitizedValue = is_array($value) ? ('(' . str_repeat('?,', count($value) - 1) . '?)') : '?';
+            $where []= str_replace( '*', $key, "`*` $opr $sanitizedValue" );
         }
 
         return implode(' AND ', $where);
